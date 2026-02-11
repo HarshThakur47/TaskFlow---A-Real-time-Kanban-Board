@@ -2,12 +2,32 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const Card = require('../models/Card');
 const List = require('../models/List');
-const { auth, boardAccess } = require('../middleware/auth');
+const Board = require('../models/Board');
+const { auth } = require('../middleware/auth');
 
 const router = express.Router();
 
 // Apply auth middleware to all routes
 router.use(auth);
+
+// Helper function to fetch board data for broadcast
+const getBoardData = async (boardId) => {
+  const board = await Board.findById(boardId)
+    .populate('owner', 'username avatar')
+    .populate('members', 'username avatar');
+
+  const lists = await List.find({ board: boardId })
+    .populate({
+      path: 'cards',
+      populate: [
+        { path: 'assignees', select: 'username avatar' },
+        { path: 'comments.user', select: 'username avatar' }
+      ]
+    })
+    .sort({ position: 1 });
+
+  return { board, lists };
+};
 
 // @route   POST /api/cards
 // @desc    Create a new card
@@ -27,7 +47,7 @@ router.post('/', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { title, description, listId, boardId } = req.body;
+    const { title, description, listId } = req.body;
 
     // Verify list exists and user has access to the board
     const list = await List.findById(listId);
@@ -36,7 +56,6 @@ router.post('/', [
     }
 
     // Check board access
-    const Board = require('../models/Board');
     const board = await Board.findById(list.board);
     if (!board) {
       return res.status(404).json({ message: 'Board not found' });
@@ -74,6 +93,17 @@ router.post('/', [
       { path: 'comments.user', select: 'username avatar' }
     ]);
 
+    // Broadcast update
+    const io = req.app.get('io');
+    if (io) {
+      const { board: updatedBoard, lists: updatedLists } = await getBoardData(board._id);
+      io.to(board._id.toString()).emit('board:update', {
+        board: updatedBoard,
+        lists: updatedLists,
+        action: 'card:created'
+      });
+    }
+
     res.status(201).json(card);
   } catch (error) {
     console.error('Create card error:', error);
@@ -106,22 +136,13 @@ router.put('/:id', [
     if (assignees !== undefined) updateFields.assignees = assignees;
     if (labels !== undefined) updateFields.labels = labels;
 
-    const card = await Card.findByIdAndUpdate(
-      req.params.id,
-      updateFields,
-      { new: true }
-    ).populate([
-      { path: 'assignees', select: 'username avatar' },
-      { path: 'comments.user', select: 'username avatar' }
-    ]);
-
-    if (!card) {
+    // Check existing card first to verify permissions
+    const existingCard = await Card.findById(req.params.id);
+    if (!existingCard) {
       return res.status(404).json({ message: 'Card not found' });
     }
 
-    // Check board access
-    const Board = require('../models/Board');
-    const board = await Board.findById(card.board);
+    const board = await Board.findById(existingCard.board);
     if (!board) {
       return res.status(404).json({ message: 'Board not found' });
     }
@@ -131,6 +152,26 @@ router.put('/:id', [
     
     if (!isOwner && !isMember) {
       return res.status(403).json({ message: 'Access denied' });
+    }
+
+    const card = await Card.findByIdAndUpdate(
+      req.params.id,
+      updateFields,
+      { new: true }
+    ).populate([
+      { path: 'assignees', select: 'username avatar' },
+      { path: 'comments.user', select: 'username avatar' }
+    ]);
+
+    // Broadcast update
+    const io = req.app.get('io');
+    if (io) {
+      const { board: updatedBoard, lists: updatedLists } = await getBoardData(board._id);
+      io.to(board._id.toString()).emit('board:update', {
+        board: updatedBoard,
+        lists: updatedLists,
+        action: 'card:updated'
+      });
     }
 
     res.json(card);
@@ -151,7 +192,6 @@ router.delete('/:id', async (req, res) => {
     }
 
     // Check board access
-    const Board = require('../models/Board');
     const board = await Board.findById(card.board);
     if (!board) {
       return res.status(404).json({ message: 'Board not found' });
@@ -171,6 +211,17 @@ router.delete('/:id', async (req, res) => {
 
     // Delete the card
     await Card.findByIdAndDelete(req.params.id);
+
+    // Broadcast update
+    const io = req.app.get('io');
+    if (io) {
+      const { board: updatedBoard, lists: updatedLists } = await getBoardData(board._id);
+      io.to(board._id.toString()).emit('board:update', {
+        board: updatedBoard,
+        lists: updatedLists,
+        action: 'card:deleted'
+      });
+    }
 
     res.json({ message: 'Card deleted successfully' });
   } catch (error) {
@@ -202,7 +253,6 @@ router.post('/:id/comments', [
     }
 
     // Check board access
-    const Board = require('../models/Board');
     const board = await Board.findById(card.board);
     if (!board) {
       return res.status(404).json({ message: 'Board not found' });
@@ -228,6 +278,17 @@ router.post('/:id/comments', [
       { path: 'assignees', select: 'username avatar' },
       { path: 'comments.user', select: 'username avatar' }
     ]);
+
+    // Broadcast update
+    const io = req.app.get('io');
+    if (io) {
+      const { board: updatedBoard, lists: updatedLists } = await getBoardData(board._id);
+      io.to(board._id.toString()).emit('board:update', {
+        board: updatedBoard,
+        lists: updatedLists,
+        action: 'comment:added'
+      });
+    }
 
     res.json(card);
   } catch (error) {
@@ -267,7 +328,6 @@ router.put('/move', [
     }
 
     // Check board access
-    const Board = require('../models/Board');
     const board = await Board.findById(card.board);
     if (!board) {
       return res.status(404).json({ message: 'Board not found' });
@@ -332,6 +392,16 @@ router.put('/move', [
         ]
       })
       .sort({ position: 1 });
+
+    // Broadcast update
+    const io = req.app.get('io');
+    if (io) {
+      io.to(card.board.toString()).emit('board:update', {
+        board: updatedBoard,
+        lists: updatedLists,
+        action: 'card:moved'
+      });
+    }
 
     res.json({
       board: updatedBoard,

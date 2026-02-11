@@ -10,6 +10,7 @@ require('dotenv').config({ path: './config.env' });
 const authRoutes = require('./routes/auth');
 const boardRoutes = require('./routes/boards');
 const cardRoutes = require('./routes/cards');
+const listRoutes = require('./routes/lists');
 
 // Import models
 const User = require('./models/User');
@@ -32,6 +33,8 @@ const io = socketIo(server, {
 app.use(cors());
 app.use(express.json());
 
+app.set('io', io);
+
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('MongoDB connected'))
@@ -41,6 +44,7 @@ mongoose.connect(process.env.MONGODB_URI)
 app.use('/api/auth', authRoutes);
 app.use('/api/boards', boardRoutes);
 app.use('/api/cards', cardRoutes);
+app.use('/api/lists', listRoutes);
 
 // Socket.IO authentication middleware
 io.use(async (socket, next) => {

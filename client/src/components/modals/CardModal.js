@@ -1,224 +1,173 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { X, MessageSquare, Users, Calendar, Edit3 } from 'lucide-react';
+import { X, MessageSquare, Users, Calendar, Edit3, Trash2, Send } from 'lucide-react';
 import { closeCardModal } from '../../store/slices/uiSlice';
+import { updateCard, addComment, deleteCard } from '../../store/slices/boardSlice'; // Import new actions
 
 const CardModal = () => {
   const dispatch = useDispatch();
   const { showCardModal, selectedCard } = useSelector((state) => state.ui);
-  const { user } = useSelector((state) => state.user);
-
+  
   const [isEditing, setIsEditing] = useState(false);
+  const [commentText, setCommentText] = useState('');
   const [editData, setEditData] = useState({
-    title: selectedCard?.title || '',
-    description: selectedCard?.description || ''
+    title: '',
+    description: ''
   });
+
+  // Initialize state when modal opens
+  React.useEffect(() => {
+    if (selectedCard) {
+      setEditData({
+        title: selectedCard.title,
+        description: selectedCard.description || ''
+      });
+    }
+  }, [selectedCard]);
 
   const handleClose = () => {
     dispatch(closeCardModal());
     setIsEditing(false);
+    setCommentText('');
   };
 
-  const handleEdit = () => {
-    setIsEditing(true);
-    setEditData({
-      title: selectedCard?.title || '',
-      description: selectedCard?.description || ''
-    });
-  };
-
-  const handleSave = () => {
-    // TODO: Implement card update functionality
+  const handleSave = async () => {
+    if (!editData.title.trim()) return;
+    
+    await dispatch(updateCard({
+      cardId: selectedCard._id,
+      data: editData
+    }));
     setIsEditing(false);
   };
 
-  const handleCancel = () => {
-    setIsEditing(false);
-    setEditData({
-      title: selectedCard?.title || '',
-      description: selectedCard?.description || ''
-    });
+  const handleDelete = async () => {
+    if (window.confirm('Are you sure you want to delete this card?')) {
+      await dispatch(deleteCard({
+        cardId: selectedCard._id,
+        listId: selectedCard.list
+      }));
+      handleClose();
+    }
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return null;
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+  const handleAddComment = async (e) => {
+    e.preventDefault();
+    if (!commentText.trim()) return;
+
+    await dispatch(addComment({
+      cardId: selectedCard._id,
+      text: commentText
+    }));
+    setCommentText('');
   };
 
   if (!showCardModal || !selectedCard) return null;
 
   return (
-    <div className="modal-overlay" onClick={handleClose}>
-      <div className="modal-content max-w-2xl" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-overlay fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={handleClose}>
+      <div className="modal-content bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4" onClick={(e) => e.stopPropagation()}>
         <div className="p-6">
+          {/* Header */}
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">
-              Card Details
-            </h2>
             <div className="flex items-center space-x-2">
-              <button
-                onClick={handleEdit}
-                className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-                title="Edit card"
-              >
-                <Edit3 className="h-5 w-5" />
-              </button>
-              <button
-                onClick={handleClose}
-                className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-              >
+              <h2 className="text-xl font-semibold text-gray-900">Card Details</h2>
+            </div>
+            <div className="flex items-center space-x-2">
+              {!isEditing && (
+                <>
+                  <button onClick={() => setIsEditing(true)} className="p-2 text-gray-400 hover:text-primary-600 transition-colors" title="Edit">
+                    <Edit3 className="h-5 w-5" />
+                  </button>
+                  <button onClick={handleDelete} className="p-2 text-gray-400 hover:text-red-600 transition-colors" title="Delete">
+                    <Trash2 className="h-5 w-5" />
+                  </button>
+                </>
+              )}
+              <button onClick={handleClose} className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
           </div>
 
           <div className="space-y-6">
-            {/* Title */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Title
-              </label>
-              {isEditing ? (
+            {/* Title & Description Edit Mode */}
+            {isEditing ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                  <input
+                    type="text"
+                    value={editData.title}
+                    onChange={(e) => setEditData({ ...editData, title: e.target.value })}
+                    className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-primary-500 outline-none"
+                    maxLength={200}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <textarea
+                    value={editData.description}
+                    onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+                    className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-primary-500 outline-none resize-none"
+                    rows={4}
+                    maxLength={2000}
+                  />
+                </div>
+                <div className="flex justify-end space-x-3">
+                  <button onClick={() => setIsEditing(false)} className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">Cancel</button>
+                  <button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save Changes</button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <h3 className="text-xl font-bold text-gray-900">{selectedCard.title}</h3>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Description</h4>
+                  <p className="text-gray-600 whitespace-pre-wrap">{selectedCard.description || 'No description provided.'}</p>
+                </div>
+              </>
+            )}
+
+            {/* Comments Section */}
+            <div className="border-t border-gray-200 pt-6">
+              <h4 className="text-sm font-medium text-gray-700 mb-4 flex items-center">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Comments ({selectedCard.comments?.length || 0})
+              </h4>
+              
+              {/* Comment Input */}
+              <form onSubmit={handleAddComment} className="mb-6 flex gap-2">
                 <input
                   type="text"
-                  value={editData.title}
-                  onChange={(e) => setEditData({ ...editData, title: e.target.value })}
-                  className="input"
-                  maxLength={200}
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  placeholder="Write a comment..."
+                  className="flex-1 p-2 border border-gray-300 rounded focus:ring-2 focus:ring-primary-500 outline-none"
                 />
-              ) : (
-                <h3 className="text-lg font-medium text-gray-900">
-                  {selectedCard.title}
-                </h3>
-              )}
-            </div>
+                <button type="submit" disabled={!commentText.trim()} className="p-2 bg-gray-100 text-gray-600 rounded hover:bg-gray-200 disabled:opacity-50">
+                  <Send className="h-5 w-5" />
+                </button>
+              </form>
 
-            {/* Description */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description
-              </label>
-              {isEditing ? (
-                <textarea
-                  value={editData.description}
-                  onChange={(e) => setEditData({ ...editData, description: e.target.value })}
-                  className="input resize-none"
-                  rows={4}
-                  maxLength={2000}
-                />
-              ) : (
-                <p className="text-gray-700 whitespace-pre-wrap">
-                  {selectedCard.description || 'No description provided'}
-                </p>
-              )}
-            </div>
-
-            {/* Labels */}
-            {selectedCard.labels && selectedCard.labels.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Labels
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {selectedCard.labels.map((label, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1 text-sm rounded-full"
-                      style={{
-                        backgroundColor: label.color + '20',
-                        color: label.color,
-                        border: `1px solid ${label.color}40`
-                      }}
-                    >
-                      {label.name}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Due Date */}
-            {selectedCard.dueDate && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Due Date
-                </label>
-                <div className="flex items-center space-x-2 text-gray-700">
-                  <Calendar className="h-4 w-4" />
-                  <span>{formatDate(selectedCard.dueDate)}</span>
-                </div>
-              </div>
-            )}
-
-            {/* Assignees */}
-            {selectedCard.assignees && selectedCard.assignees.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Assignees
-                </label>
-                <div className="flex items-center space-x-2">
-                  <Users className="h-4 w-4 text-gray-500" />
-                  <div className="flex flex-wrap gap-2">
-                    {selectedCard.assignees.map((assignee) => (
-                      <span
-                        key={assignee._id}
-                        className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
-                      >
-                        {assignee.username}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Comments */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Comments ({selectedCard.comments?.length || 0})
-              </label>
-              {selectedCard.comments && selectedCard.comments.length > 0 ? (
-                <div className="space-y-3 max-h-64 overflow-y-auto">
-                  {selectedCard.comments.map((comment, index) => (
-                    <div key={index} className="bg-gray-50 p-3 rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-900">
-                          {comment.user?.username || 'Unknown User'}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {new Date(comment.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-700">{comment.text}</p>
+              {/* Comment List */}
+              <div className="space-y-4 max-h-60 overflow-y-auto">
+                {selectedCard.comments?.map((comment, index) => (
+                  <div key={index} className="flex gap-3">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
+                      {comment.user?.username?.[0]?.toUpperCase()}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500 text-sm">No comments yet</p>
-              )}
-            </div>
-
-            {/* Edit Actions */}
-            {isEditing && (
-              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
-                <button
-                  onClick={handleCancel}
-                  className="btn btn-secondary"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSave}
-                  className="btn btn-primary"
-                >
-                  Save Changes
-                </button>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm text-gray-900">{comment.user?.username}</span>
+                        <span className="text-xs text-gray-500">{new Date(comment.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      <p className="text-sm text-gray-600">{comment.text}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>

@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable } from 'react-beautiful-dnd';
 import { Plus, Users, Settings } from 'lucide-react';
 import { fetchBoard, updateBoardFromSocket, moveCardOptimistic } from '../store/slices/boardSlice';
-import { openCreateListModal, openAddMemberModal } from '../store/slices/uiSlice';
+import { openCreateListModal, openAddMemberModal, openBoardSettingsModal } from '../store/slices/uiSlice'; // NEW
 import { addNotification } from '../store/slices/uiSlice';
 import List from '../components/List';
 import SocketManager from '../utils/SocketManager';
@@ -98,6 +98,11 @@ const BoardPage = () => {
     dispatch(openAddMemberModal());
   };
 
+  // NEW
+  const handleSettings = () => {
+    dispatch(openBoardSettingsModal());
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -153,7 +158,10 @@ const BoardPage = () => {
                 Add Member
               </button>
               
-              <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+              <button 
+                onClick={handleSettings} // NEW
+                className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+              >
                 <Settings className="h-5 w-5" />
               </button>
             </div>

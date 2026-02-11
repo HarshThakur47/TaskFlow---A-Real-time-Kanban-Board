@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Users, Calendar } from 'lucide-react';
 import { fetchBoards } from '../store/slices/boardSlice';
-import { addNotification } from '../store/slices/uiSlice';
+import { addNotification, openCreateBoardModal } from '../store/slices/uiSlice'; // 1. Added import
 
 const DashboardPage = () => {
   const dispatch = useDispatch();
@@ -23,6 +23,11 @@ const DashboardPage = () => {
 
   const handleBoardClick = (boardId) => {
     navigate(`/board/${boardId}`);
+  };
+  
+  // 2. Added handler to open modal
+  const handleCreateBoard = () => {
+    dispatch(openCreateBoardModal());
   };
 
   const formatDate = (dateString) => {
@@ -54,7 +59,11 @@ const DashboardPage = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {/* Create New Board Card */}
-        <div className="card p-6 border-2 border-dashed border-gray-300 hover:border-primary-400 transition-colors cursor-pointer">
+        {/* 3. Added onClick handler here */}
+        <div 
+          onClick={handleCreateBoard}
+          className="card p-6 border-2 border-dashed border-gray-300 hover:border-primary-400 transition-colors cursor-pointer"
+        >
           <div className="flex flex-col items-center justify-center h-48 text-center">
             <Plus className="h-12 w-12 text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -123,6 +132,13 @@ const DashboardPage = () => {
             <p className="text-gray-500 mb-6">
               Create your first board to start organizing your tasks and collaborating with your team.
             </p>
+            {/* Added a button here as well for empty states */}
+            <button 
+              onClick={handleCreateBoard}
+              className="btn btn-primary"
+            >
+              Create Board
+            </button>
           </div>
         </div>
       )}

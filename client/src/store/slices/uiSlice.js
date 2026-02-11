@@ -7,6 +7,7 @@ const initialState = {
   showCreateCardModal: false,
   showCardModal: false,
   showAddMemberModal: false,
+  showBoardSettingsModal: false, // NEW
   
   // Selected items
   selectedCard: null,
@@ -65,6 +66,13 @@ const uiSlice = createSlice({
     closeAddMemberModal: (state) => {
       state.showAddMemberModal = false;
     },
+
+    openBoardSettingsModal: (state) => { // NEW
+      state.showBoardSettingsModal = true;
+    },
+    closeBoardSettingsModal: (state) => { // NEW
+      state.showBoardSettingsModal = false;
+    },
     
     // Loading actions
     setLoading: (state, action) => {
@@ -108,6 +116,7 @@ const uiSlice = createSlice({
       state.showCreateCardModal = false;
       state.showCardModal = false;
       state.showAddMemberModal = false;
+      state.showBoardSettingsModal = false; // NEW
       state.selectedCard = null;
       state.selectedListId = null;
     },
@@ -126,6 +135,8 @@ export const {
   closeCardModal,
   openAddMemberModal,
   closeAddMemberModal,
+  openBoardSettingsModal, // NEW
+  closeBoardSettingsModal, // NEW
   
   // Loading actions
   setLoading,

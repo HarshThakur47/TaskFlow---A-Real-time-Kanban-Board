@@ -18,6 +18,7 @@ import CreateListModal from './components/modals/CreateListModal';
 import CreateCardModal from './components/modals/CreateCardModal';
 import CardModal from './components/modals/CardModal';
 import AddMemberModal from './components/modals/AddMemberModal';
+import BoardSettingsModal from './components/modals/BoardSettingsModal'; // NEW
 
 function AppContent() {
   return (
@@ -54,6 +55,7 @@ function AppContent() {
         <CreateCardModal />
         <CardModal />
         <AddMemberModal />
+        <BoardSettingsModal /> {/* NEW */}
       </div>
     </Router>
   );

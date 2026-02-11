@@ -52,6 +52,34 @@ export const createBoard = createAsyncThunk(
   }
 );
 
+export const updateBoard = createAsyncThunk(
+  'board/updateBoard',
+  async ({ boardId, data }, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(`${API_URL}/boards/${boardId}`, data, {
+        headers: getAuthHeaders()
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message);
+    }
+  }
+);
+
+export const deleteBoard = createAsyncThunk(
+  'board/deleteBoard',
+  async (boardId, { rejectWithValue }) => {
+    try {
+      await axios.delete(`${API_URL}/boards/${boardId}`, {
+        headers: getAuthHeaders()
+      });
+      return boardId;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message);
+    }
+  }
+);
+
 export const createList = createAsyncThunk(
   'board/createList',
   async ({ boardId, title }, { rejectWithValue }) => {
@@ -93,6 +121,63 @@ export const moveCard = createAsyncThunk(
     }
   }
 );
+
+export const updateCard = createAsyncThunk(
+  'board/updateCard',
+  async ({ cardId, data }, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(`${API_URL}/cards/${cardId}`, data, {
+        headers: getAuthHeaders()
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message);
+    }
+  }
+);
+
+export const deleteCard = createAsyncThunk(
+  'board/deleteCard',
+  async ({ cardId, listId }, { rejectWithValue }) => {
+    try {
+      await axios.delete(`${API_URL}/cards/${cardId}`, {
+        headers: getAuthHeaders()
+      });
+      return { cardId, listId };
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message);
+    }
+  }
+);
+
+export const addComment = createAsyncThunk(
+  'board/addComment',
+  async ({ cardId, text }, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(`${API_URL}/cards/${cardId}/comments`, { text }, {
+        headers: getAuthHeaders()
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message);
+    }
+  }
+);
+
+export const deleteList = createAsyncThunk(
+  'board/deleteList',
+  async (listId, { rejectWithValue }) => {
+    try {
+      await axios.delete(`${API_URL}/lists/${listId}`, {
+        headers: getAuthHeaders()
+      });
+      return listId;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message);
+    }
+  }
+);
+
 
 const initialState = {
   boards: [],
@@ -203,6 +288,20 @@ const boardSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
+      // Update Board
+      .addCase(updateBoard.fulfilled, (state, action) => {
+        state.currentBoard = action.payload;
+        const index = state.boards.findIndex(b => b._id === action.payload._id);
+        if (index !== -1) {
+          state.boards[index] = action.payload;
+        }
+      })
+      // Delete Board
+      .addCase(deleteBoard.fulfilled, (state, action) => {
+        state.boards = state.boards.filter(b => b._id !== action.payload);
+        state.currentBoard = null;
+        state.currentLists = [];
+      })
       // Create list
       .addCase(createList.pending, (state) => {
         state.loading = true;
@@ -245,6 +344,33 @@ const boardSlice = createSlice({
       .addCase(moveCard.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      .addCase(updateCard.fulfilled, (state, action) => {
+        // Update the card in the list
+        state.currentLists.forEach(list => {
+          const index = list.cards.findIndex(c => c._id === action.payload._id);
+          if (index !== -1) {
+            list.cards[index] = action.payload;
+          }
+        });
+      })
+      .addCase(deleteCard.fulfilled, (state, action) => {
+        const { cardId, listId } = action.payload;
+        const list = state.currentLists.find(l => l._id === listId);
+        if (list) {
+          list.cards = list.cards.filter(c => c._id !== cardId);
+        }
+      })
+      .addCase(addComment.fulfilled, (state, action) => {
+         state.currentLists.forEach(list => {
+          const index = list.cards.findIndex(c => c._id === action.payload._id);
+          if (index !== -1) {
+            list.cards[index] = action.payload;
+          }
+        });
+      })
+      .addCase(deleteList.fulfilled, (state, action) => {
+        state.currentLists = state.currentLists.filter(l => l._id !== action.payload);
       });
   },
 });
