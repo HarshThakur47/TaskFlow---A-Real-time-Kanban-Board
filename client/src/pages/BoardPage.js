@@ -3,11 +3,12 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable } from 'react-beautiful-dnd';
 import { Plus, Users, Settings } from 'lucide-react';
-import { fetchBoard, updateBoardFromSocket, moveCardOptimistic } from '../store/slices/boardSlice';
-import { openCreateListModal, openAddMemberModal, openBoardSettingsModal } from '../store/slices/uiSlice'; // NEW
+import { openCreateListModal, openAddMemberModal, openBoardSettingsModal } from '../store/slices/uiSlice';
 import { addNotification } from '../store/slices/uiSlice';
 import List from '../components/List';
 import SocketManager from '../utils/SocketManager';
+import { fetchBoard, updateBoardFromSocket, moveCardOptimistic, moveCard } from '../store/slices/boardSlice';
+
 
 const BoardPage = () => {
   const { boardId } = useParams();
@@ -55,7 +56,7 @@ const BoardPage = () => {
     }
   }, [currentBoard, user, boardId, dispatch]);
 
-  const handleDragEnd = async (result) => {
+const handleDragEnd = async (result) => {
     const { destination, source, draggableId } = result;
 
     if (!destination) return;
@@ -71,7 +72,6 @@ const BoardPage = () => {
     const destinationListId = destination.droppableId;
     const newPosition = destination.index;
 
-    // Optimistic update
     dispatch(moveCardOptimistic({
       cardId: draggableId,
       sourceListId,
@@ -79,15 +79,12 @@ const BoardPage = () => {
       newPosition
     }));
 
-    // Send to server via socket
-    if (socket) {
-      socket.emit('card:move', {
-        cardId: draggableId,
-        sourceListId,
-        destinationListId,
-        newPosition
-      });
-    }
+    dispatch(moveCard({
+      cardId: draggableId,
+      sourceListId,
+      destinationListId,
+      newPosition
+    }));
   };
 
   const handleCreateList = () => {

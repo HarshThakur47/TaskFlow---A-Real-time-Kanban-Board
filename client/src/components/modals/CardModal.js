@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { X, MessageSquare, Users, Calendar, Edit3, Trash2, Send } from 'lucide-react';
+import { X, MessageSquare, Edit3, Trash2, Send } from 'lucide-react';
 import { closeCardModal } from '../../store/slices/uiSlice';
-import { updateCard, addComment, deleteCard } from '../../store/slices/boardSlice'; // Import new actions
+import { updateCard, addComment, deleteCard } from '../../store/slices/boardSlice';
 
 const CardModal = () => {
   const dispatch = useDispatch();
-  const { showCardModal, selectedCard } = useSelector((state) => state.ui);
+  // Get the initial "snapshot" (snapshot ID) from UI state
+  const { showCardModal, selectedCard: initialSelectedCard } = useSelector((state) => state.ui);
+  // Get the LIVE lists from Board state (which receives Socket updates)
+  const { currentLists } = useSelector((state) => state.board);
   
   const [isEditing, setIsEditing] = useState(false);
   const [commentText, setCommentText] = useState('');
@@ -15,15 +18,32 @@ const CardModal = () => {
     description: ''
   });
 
-  // Initialize state when modal opens
-  React.useEffect(() => {
-    if (selectedCard) {
+  // --- THE FIX: Find the Live Card ---
+  // Instead of using initialSelectedCard directly, we search for the matching card 
+  // in the currentLists. This ensures that when the socket updates the list, 
+  // this variable updates instantly.
+  const selectedCard = useMemo(() => {
+    if (!initialSelectedCard) return null;
+    
+    // Search for the card in the live lists
+    for (const list of currentLists) {
+      const found = list.cards.find(c => c._id === initialSelectedCard._id);
+      if (found) return found;
+    }
+    
+    // Fallback if not found (e.g., just deleted)
+    return initialSelectedCard;
+  }, [currentLists, initialSelectedCard]);
+
+  // Update form data only when opening or switching cards
+  useEffect(() => {
+    if (selectedCard && !isEditing) {
       setEditData({
         title: selectedCard.title,
         description: selectedCard.description || ''
       });
     }
-  }, [selectedCard]);
+  }, [selectedCard, isEditing]);
 
   const handleClose = () => {
     dispatch(closeCardModal());
@@ -152,7 +172,8 @@ const CardModal = () => {
 
               {/* Comment List */}
               <div className="space-y-4 max-h-60 overflow-y-auto">
-                {selectedCard.comments?.map((comment, index) => (
+                {/* We reverse the array to show newest comments first */}
+                {selectedCard.comments?.slice().reverse().map((comment, index) => (
                   <div key={index} className="flex gap-3">
                     <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
                       {comment.user?.username?.[0]?.toUpperCase()}
@@ -160,7 +181,7 @@ const CardModal = () => {
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-sm text-gray-900">{comment.user?.username}</span>
-                        <span className="text-xs text-gray-500">{new Date(comment.createdAt).toLocaleDateString()}</span>
+                        <span className="text-xs text-gray-500">{new Date(comment.createdAt).toLocaleDateString()} {new Date(comment.createdAt).toLocaleTimeString()}</span>
                       </div>
                       <p className="text-sm text-gray-600">{comment.text}</p>
                     </div>

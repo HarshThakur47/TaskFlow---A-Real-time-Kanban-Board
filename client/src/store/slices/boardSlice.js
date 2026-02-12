@@ -178,6 +178,19 @@ export const deleteList = createAsyncThunk(
   }
 );
 
+export const addMember = createAsyncThunk(
+  'board/addMember',
+  async ({ boardId, email }, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(`${API_URL}/boards/${boardId}/members`, { email }, {
+        headers: getAuthHeaders()
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message);
+    }
+  }
+);
 
 const initialState = {
   boards: [],
@@ -371,6 +384,14 @@ const boardSlice = createSlice({
       })
       .addCase(deleteList.fulfilled, (state, action) => {
         state.currentLists = state.currentLists.filter(l => l._id !== action.payload);
+      })
+      .addCase(addMember.fulfilled, (state, action) => {
+        state.currentBoard = action.payload;
+        // Update the board in the main list too
+        const index = state.boards.findIndex(b => b._id === action.payload._id);
+        if (index !== -1) {
+          state.boards[index] = action.payload;
+        }
       });
   },
 });
