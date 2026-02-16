@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { LogOut, Plus, Menu, User } from 'lucide-react';
 import { logout } from '../store/slices/userSlice';
-import { openCreateBoardModal } from '../store/slices/uiSlice';
+import { openCreateBoardModal, openUserProfileModal } from '../store/slices/uiSlice'; // Import action
 
 const Navbar = () => {
   const dispatch = useDispatch();
@@ -18,6 +18,11 @@ const Navbar = () => {
 
   const handleCreateBoard = () => {
     dispatch(openCreateBoardModal());
+  };
+
+  // NEW: Handler for profile click
+  const handleProfileClick = () => {
+    dispatch(openUserProfileModal());
   };
 
   if (!isAuthenticated) {
@@ -47,7 +52,11 @@ const Navbar = () => {
 
             <div className="relative">
               <div className="flex items-center space-x-3">
-                <div className="flex items-center space-x-2">
+                {/* Made this div clickable with cursor-pointer */}
+                <div 
+                  onClick={handleProfileClick}
+                  className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                >
                   <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
                     <User className="h-4 w-4 text-white" />
                   </div>
@@ -56,6 +65,7 @@ const Navbar = () => {
                   </span>
                 </div>
                 
+                {/* Kept quick logout, or you can remove it since it's in the modal now */}
                 <button
                   onClick={handleLogout}
                   className="p-2 text-gray-400 hover:text-gray-600 transition-colors"

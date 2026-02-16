@@ -10,6 +10,8 @@ const CardModal = () => {
   const { showCardModal, selectedCard: initialSelectedCard } = useSelector((state) => state.ui);
   // 2. Get the LIVE lists from Board state (this updates when Socket/API sends data)
   const { currentLists } = useSelector((state) => state.board);
+  // 3. Get Current User for fallback checks
+  const { user: currentUser } = useSelector((state) => state.user);
   
   const [isEditing, setIsEditing] = useState(false);
   const [commentText, setCommentText] = useState('');
@@ -18,9 +20,7 @@ const CardModal = () => {
     description: ''
   });
 
-  // 3. THE FIX: Find the "Live" Card
-  // We search currentLists for the card with the matching ID.
-  // When Socket.IO updates currentLists, this 'selectedCard' variable updates instantly.
+  // 4. THE FIX: Find the "Live" Card
   const selectedCard = useMemo(() => {
     if (!initialSelectedCard) return null;
     
@@ -169,20 +169,36 @@ const CardModal = () => {
 
               {/* Comment List */}
               <div className="space-y-4 max-h-60 overflow-y-auto">
-                {selectedCard.comments?.slice().reverse().map((comment, index) => (
-                  <div key={index} className="flex gap-3">
-                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
-                      {comment.user?.username?.[0]?.toUpperCase()}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm text-gray-900">{comment.user?.username}</span>
-                        <span className="text-xs text-gray-500">{new Date(comment.createdAt).toLocaleDateString()} {new Date(comment.createdAt).toLocaleTimeString()}</span>
+                {selectedCard.comments?.slice().reverse().map((comment, index) => {
+                  // SAFE RENDER LOGIC:
+                  // 1. Try to use the populated username
+                  // 2. If missing, check if the ID matches current user (Optimistic update case)
+                  // 3. Fallback to 'Unknown'
+                  let username = comment.user?.username;
+                  if (!username && (comment.user === currentUser?.id || comment.user === currentUser?._id)) {
+                    username = currentUser.username;
+                  }
+                  if (!username) username = 'Unknown';
+                  
+                  const initial = username[0]?.toUpperCase() || '?';
+
+                  return (
+                    <div key={index} className="flex gap-3">
+                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
+                        {initial}
                       </div>
-                      <p className="text-sm text-gray-600">{comment.text}</p>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-sm text-gray-900">{username}</span>
+                          <span className="text-xs text-gray-500">
+                            {new Date(comment.createdAt).toLocaleDateString()} {new Date(comment.createdAt).toLocaleTimeString()}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600">{comment.text}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>

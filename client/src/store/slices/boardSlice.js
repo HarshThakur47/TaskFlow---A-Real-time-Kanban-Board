@@ -322,7 +322,11 @@ const boardSlice = createSlice({
       })
       .addCase(createList.fulfilled, (state, action) => {
         state.loading = false;
-        state.currentLists.push(action.payload);
+        // FIX: Check if list already exists before pushing
+        const exists = state.currentLists.some(l => l._id === action.payload._id);
+        if (!exists) {
+          state.currentLists.push(action.payload);
+        }
       })
       .addCase(createList.rejected, (state, action) => {
         state.loading = false;
@@ -337,7 +341,11 @@ const boardSlice = createSlice({
         state.loading = false;
         const list = state.currentLists.find(l => l._id === action.payload.list);
         if (list) {
-          list.cards.push(action.payload);
+          // FIX: Check if card already exists before pushing
+          const exists = list.cards.some(c => c._id === action.payload._id);
+          if (!exists) {
+            list.cards.push(action.payload);
+          }
         }
       })
       .addCase(createCard.rejected, (state, action) => {

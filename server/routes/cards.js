@@ -277,6 +277,12 @@ router.post('/:id/comments', [
     card.comments.push({ user: req.user._id, text });
     await card.save();
 
+    // --- KEY FIX: Populate the user details so the frontend has them immediately ---
+    await card.populate({
+      path: 'comments.user',
+      select: 'username avatar'
+    });
+
     const io = req.app.get('io');
     if (io) {
       const { board: b, lists: l } = await getBoardData(board._id);
