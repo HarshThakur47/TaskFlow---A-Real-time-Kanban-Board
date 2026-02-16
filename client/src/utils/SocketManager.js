@@ -16,15 +16,30 @@ class SocketManager {
       auth: {
         token: token
       },
-      transports: ['websocket', 'polling']
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000
+    });
+
+    this.socket.on('connect', () => {
+      console.log('Socket connected successfully');
     });
 
     this.socket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error);
+      console.error('Socket connection error:', error.message);
     });
 
     this.socket.on('disconnect', (reason) => {
       console.log('Socket disconnected:', reason);
+      if (reason === 'io server disconnect') {
+        // Reconnect manually if server disconnected
+        this.socket.connect();
+      }
+    });
+
+    this.socket.on('error', (error) => {
+      console.error('Socket error event:', error);
     });
 
     return this.socket;

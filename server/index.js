@@ -22,11 +22,13 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: process.env.NODE_ENV === 'production' 
-      ? ['https://your-frontend-domain.vercel.app'] 
-      : ['http://localhost:3000'],
-    methods: ['GET', 'POST']
-  }
+    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    methods: ['GET', 'POST'],
+    credentials: true
+  },
+  transports: ['websocket', 'polling'],
+  pingTimeout: 60000,
+  pingInterval: 25000
 });
 
 // Middleware

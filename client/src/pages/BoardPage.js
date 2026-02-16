@@ -29,11 +29,17 @@ const BoardPage = () => {
     }
   }, [error, dispatch, navigate]);
 
-  // Socket.IO setup
+  // Socket.IO setup - FIXED
   useEffect(() => {
     if (currentBoard && user) {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('No auth token found');
+        return;
+      }
+      
       const socketManager = new SocketManager();
-      const socketInstance = socketManager.connect(user.token);
+      const socketInstance = socketManager.connect(token);
       
       socketInstance.on('connect', () => {
         console.log('Connected to socket server');

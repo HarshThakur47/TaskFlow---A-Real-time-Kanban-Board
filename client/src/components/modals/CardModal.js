@@ -6,9 +6,9 @@ import { updateCard, addComment, deleteCard } from '../../store/slices/boardSlic
 
 const CardModal = () => {
   const dispatch = useDispatch();
-  // Get the initial "snapshot" (snapshot ID) from UI state
+  // 1. Get the ID of the clicked card from UI state
   const { showCardModal, selectedCard: initialSelectedCard } = useSelector((state) => state.ui);
-  // Get the LIVE lists from Board state (which receives Socket updates)
+  // 2. Get the LIVE lists from Board state (this updates when Socket/API sends data)
   const { currentLists } = useSelector((state) => state.board);
   
   const [isEditing, setIsEditing] = useState(false);
@@ -18,21 +18,18 @@ const CardModal = () => {
     description: ''
   });
 
-  // --- THE FIX: Find the Live Card ---
-  // Instead of using initialSelectedCard directly, we search for the matching card 
-  // in the currentLists. This ensures that when the socket updates the list, 
-  // this variable updates instantly.
+  // 3. THE FIX: Find the "Live" Card
+  // We search currentLists for the card with the matching ID.
+  // When Socket.IO updates currentLists, this 'selectedCard' variable updates instantly.
   const selectedCard = useMemo(() => {
     if (!initialSelectedCard) return null;
     
-    // Search for the card in the live lists
     for (const list of currentLists) {
       const found = list.cards.find(c => c._id === initialSelectedCard._id);
       if (found) return found;
     }
     
-    // Fallback if not found (e.g., just deleted)
-    return initialSelectedCard;
+    return initialSelectedCard; // Fallback
   }, [currentLists, initialSelectedCard]);
 
   // Update form data only when opening or switching cards
@@ -172,7 +169,6 @@ const CardModal = () => {
 
               {/* Comment List */}
               <div className="space-y-4 max-h-60 overflow-y-auto">
-                {/* We reverse the array to show newest comments first */}
                 {selectedCard.comments?.slice().reverse().map((comment, index) => (
                   <div key={index} className="flex gap-3">
                     <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
