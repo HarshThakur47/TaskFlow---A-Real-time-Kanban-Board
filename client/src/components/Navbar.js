@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
-import { LogOut, Plus, Menu, User } from 'lucide-react';
+import { LogOut, Plus, User } from 'lucide-react';
 import { logout } from '../store/slices/userSlice';
 import { openCreateBoardModal, openUserProfileModal } from '../store/slices/uiSlice'; // Import action
 
@@ -9,7 +9,6 @@ const Navbar = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useSelector((state) => state.user);
-  const { sidebarOpen } = useSelector((state) => state.ui);
 
   const handleLogout = () => {
     dispatch(logout());

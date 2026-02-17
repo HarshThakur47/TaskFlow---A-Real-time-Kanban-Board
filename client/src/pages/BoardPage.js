@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
-import { DragDropContext, Droppable } from 'react-beautiful-dnd';
+import { DragDropContext} from 'react-beautiful-dnd';
 import { Plus, Users, Settings } from 'lucide-react';
 import { openCreateListModal, openAddMemberModal, openBoardSettingsModal } from '../store/slices/uiSlice';
 import { addNotification } from '../store/slices/uiSlice';
