@@ -1,6 +1,9 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
+  // Theme state
+  theme: localStorage.getItem('theme') || 'light',
+  
   // Modal states
   showCreateBoardModal: false,
   showCreateListModal: false,
@@ -8,7 +11,7 @@ const initialState = {
   showCardModal: false,
   showAddMemberModal: false,
   showBoardSettingsModal: false,
-  showUserProfileModal: false, // NEW
+  showUserProfileModal: false,
   
   // Selected items
   selectedCard: null,
@@ -28,7 +31,12 @@ const uiSlice = createSlice({
   name: 'ui',
   initialState,
   reducers: {
-    // ... existing reducers
+    // Theme Toggle
+    toggleTheme: (state) => {
+      state.theme = state.theme === 'light' ? 'dark' : 'light';
+      localStorage.setItem('theme', state.theme);
+    },
+
     openCreateBoardModal: (state) => { state.showCreateBoardModal = true; },
     closeCreateBoardModal: (state) => { state.showCreateBoardModal = false; },
     openCreateListModal: (state) => { state.showCreateListModal = true; },
@@ -53,16 +61,9 @@ const uiSlice = createSlice({
     closeAddMemberModal: (state) => { state.showAddMemberModal = false; },
     openBoardSettingsModal: (state) => { state.showBoardSettingsModal = true; },
     closeBoardSettingsModal: (state) => { state.showBoardSettingsModal = false; },
-
-    // NEW: User Profile Modal Actions
-    openUserProfileModal: (state) => {
-      state.showUserProfileModal = true;
-    },
-    closeUserProfileModal: (state) => {
-      state.showUserProfileModal = false;
-    },
+    openUserProfileModal: (state) => { state.showUserProfileModal = true; },
+    closeUserProfileModal: (state) => { state.showUserProfileModal = false; },
     
-    // ... rest of reducers
     setLoading: (state, action) => { state.isLoading = action.payload; },
     addNotification: (state, action) => {
       const notification = { id: Date.now(), type: 'info', message: '', ...action.payload };
@@ -82,7 +83,7 @@ const uiSlice = createSlice({
       state.showCardModal = false;
       state.showAddMemberModal = false;
       state.showBoardSettingsModal = false;
-      state.showUserProfileModal = false; // NEW
+      state.showUserProfileModal = false;
       state.selectedCard = null;
       state.selectedListId = null;
     },
@@ -90,13 +91,14 @@ const uiSlice = createSlice({
 });
 
 export const {
+  toggleTheme,
   openCreateBoardModal, closeCreateBoardModal,
   openCreateListModal, closeCreateListModal,
   openCreateCardModal, closeCreateCardModal,
   openCardModal, closeCardModal,
   openAddMemberModal, closeAddMemberModal,
   openBoardSettingsModal, closeBoardSettingsModal,
-  openUserProfileModal, closeUserProfileModal, // NEW
+  openUserProfileModal, closeUserProfileModal,
   setLoading, addNotification, removeNotification, clearNotifications,
   toggleSidebar, closeSidebar, clearModals,
 } = uiSlice.actions;

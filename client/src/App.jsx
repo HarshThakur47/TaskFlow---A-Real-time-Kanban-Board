@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Provider } from 'react-redux';
+import { Provider, useSelector } from 'react-redux';
 import { store } from './store';
 
 // Components
@@ -19,12 +19,24 @@ import CreateCardModal from './components/modals/CreateCardModal';
 import CardModal from './components/modals/CardModal';
 import AddMemberModal from './components/modals/AddMemberModal';
 import BoardSettingsModal from './components/modals/BoardSettingsModal';
-import UserProfileModal from './components/modals/UserProfileModal'; // NEW
+import UserProfileModal from './components/modals/UserProfileModal';
 
 function AppContent() {
+  const { theme } = useSelector((state) => state.ui);
+
+  // Apply dark mode class to HTML root smoothly
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
+
   return (
     <Router>
-      <div className="min-h-screen bg-gray-50">
+      {/* Global Background with transition */}
+      <div className="min-h-screen bg-surface-light dark:bg-surface-dark transition-theme duration-500 ease-in-out text-gray-900 dark:text-gray-100">
         <Navbar />
         <NotificationContainer />
         
@@ -57,7 +69,7 @@ function AppContent() {
         <CardModal />
         <AddMemberModal />
         <BoardSettingsModal />
-        <UserProfileModal /> {/* NEW */}
+        <UserProfileModal />
       </div>
     </Router>
   );

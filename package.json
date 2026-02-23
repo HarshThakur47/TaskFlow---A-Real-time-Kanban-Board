@@ -12,10 +12,18 @@
     "setup": "node setup.js",
     "setup-mongodb": "node setup-mongodb.js"
   },
-  "keywords": ["kanban", "project-management", "real-time", "collaboration"],
+  "keywords": [
+    "kanban",
+    "project-management",
+    "real-time",
+    "collaboration"
+  ],
   "author": "TaskFlow Team",
   "license": "MIT",
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "@hello-pangea/dnd": "^18.0.1"
   }
 }
