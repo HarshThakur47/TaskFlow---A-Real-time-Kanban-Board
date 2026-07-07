@@ -24,7 +24,7 @@ const BoardPage = () => {
   }, [error, dispatch, navigate]);
 
   useEffect(() => {
-    if (currentBoard && user) {
+    if (boardId && user) {
       const token = localStorage.getItem('token');
       if (!token) return;
       const socketInstance = new SocketManager().connect(token);
@@ -33,7 +33,7 @@ const BoardPage = () => {
       setSocket(socketInstance);
       return () => socketInstance.disconnect();
     }
-  }, [currentBoard, user, boardId, dispatch]);
+  }, [user, boardId, dispatch]);
 
   const handleDragEnd = async (result) => {
     const { destination, source, draggableId } = result;
