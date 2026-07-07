@@ -28,6 +28,9 @@ const BoardPage = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
       const socketInstance = new SocketManager().connect(token);
+      if (socketInstance.connected) {
+        socketInstance.emit('join-board', boardId);
+      }
       socketInstance.on('connect', () => socketInstance.emit('join-board', boardId));
       socketInstance.on('board:update', (data) => dispatch(updateBoardFromSocket(data)));
       setSocket(socketInstance);
